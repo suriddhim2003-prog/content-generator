@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a, #1a0a2e, #0a1628);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px 20px; }
+
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        header p { color: #888; font-size: 0.95rem; margin-top: 4px; }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 24px; margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .card h2 { font-size: 1.05rem; color: #ccc; margin-bottom: 14px; }
+
+        input, textarea {
+            width: 100%; padding: 14px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px; color: #fff; font-size: 0.95rem;
+            font-family: inherit; outline: none; transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus { border-color: #ff6b6b; }
+        input::placeholder, textarea::placeholder { color: #555; }
+        textarea { resize: none; height: 80px; margin-top: 10px; }
+
+        .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+        .chip {
+            padding: 10px 18px; border-radius: 25px; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.2s; user-select: none;
+            border: 1.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #aaa;
+        }
+        .chip:hover { background: rgba(255,255,255,0.08); }
+        .chip.active { color: #fff; }
+
+        .chip[data-platform="instagram"].active { background: rgba(225,48,108,0.25); border-color: #e1306c; color: #ff6b9d; }
+        .chip[data-platform="twitter"].active { background: rgba(29,161,242,0.2); border-color: #1da1f2; color: #5bc0f8; }
+        .chip[data-platform="linkedin"].active { background: rgba(0,119,181,0.2); border-color: #0077b5; color: #4db3e6; }
+        .chip[data-platform="whatsapp"].active { background: rgba(37,211,102,0.2); border-color: #25d366; color: #5ee89c; }
+
+        .chip[data-tone].active { background: rgba(255,107,107,0.2); border-color: #ff6b6b; color: #ff9b9b; }
+
+        .generate-btn {
+            width: 100%; padding: 16px; margin-top: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border: none; border-radius: 14px; color: #1a1a2e;
+            font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+        }
+        .generate-btn:hover { opacity: 0.85; }
+        .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .results-section { display: none; }
+
+        .platform-section { margin-bottom: 24px; }
+        .platform-header {
+            font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .post-card {
+            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 18px; margin-bottom: 12px;
+            position: relative;
+        }
+        .post-tone {
+            font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+            color: #ff6b6b; margin-bottom: 8px; letter-spacing: 1px;
+        }
+        .post-text {
+            font-size: 0.9rem; line-height: 1.7; white-space: pre-wrap; color: #ddd;
+        }
+        .post-meta {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 12px; font-size: 0.75rem; color: #666;
+        }
+        .char-count.over { color: #ff4444; }
+
+        .copy-btn {
+            padding: 6px 14px; border-radius: 8px; font-size: 0.78rem;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: #aaa; cursor: pointer; transition: all 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+        .copy-btn.copied { background: rgba(76,175,80,0.2); border-color: #4caf50; color: #4caf50; }
+
+        .loading { text-align: center; padding: 40px; }
+        .loading .spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #ff6b6b; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .example-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .example-btn {
+            padding: 6px 14px; border-radius: 20px; font-size: 0.78rem;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #888; cursor: pointer; transition: all 0.2s;
+        }
+        .example-btn:hover { background: rgba(255,107,107,0.15); border-color: #ff6b6b; color: #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Social Media Content Generator</h1>
+            <p>Enter your product → Get ready-to-post captions for every platform</p>
+        </header>
+
+        <div class="card">
+            <h2>What are you promoting?</h2>
+            <input type="text" id="productInput" placeholder="Product or service name (e.g. Glow Face Serum, IELTS Batch, Home Cooked Meals)">
+            <textarea id="descInput" placeholder="Brief description — what it does, key features, price (optional)&#10;e.g. Natural vitamin C serum for glowing skin. Reduces dark spots in 2 weeks. Only ₹499."></textarea>
+            <div class="example-row">
+                <span class="example-btn" onclick="useExample('Glow Face Serum', 'Natural vitamin C serum for radiant skin. Reduces dark spots in 2 weeks. Dermatologist tested. Only ₹499')">Beauty product</span>
+                <span class="example-btn" onclick="useExample('IELTS Crash Course', 'Score 7+ in 30 days. Live online classes with British Council certified trainers. Mock tests included. Starting ₹4999')">Online course</span>
+                <span class="example-btn" onclick="useExample('HomePlate Tiffin Service', 'Fresh home-cooked meals delivered daily. Veg and non-veg options. Starting ₹100 per meal. Free delivery within 5km')">Food business</span>
+                <span class="example-btn" onclick="useExample('FitZone Gym', 'Premium gym with personal training. Zumba, CrossFit, Yoga classes. AC facility. Monthly ₹1500, Annual ₹12000')">Fitness</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Platforms</h2>
+            <div class="row" id="platformRow">
+                <div class="chip active" data-platform="instagram" onclick="toggleChip(this)">📸 Instagram</div>
+                <div class="chip active" data-platform="twitter" onclick="toggleChip(this)">🐦 Twitter / X</div>
+                <div class="chip active" data-platform="linkedin" onclick="toggleChip(this)">💼 LinkedIn</div>
+                <div class="chip" data-platform="whatsapp" onclick="toggleChip(this)">💬 WhatsApp</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Tone</h2>
+            <div class="row" id="toneRow">
+                <div class="chip active" data-tone="Casual & Fun" onclick="toggleChip(this)">😄 Casual & Fun</div>
+                <div class="chip active" data-tone="Professional" onclick="toggleChip(this)">👔 Professional</div>
+                <div class="chip" data-tone="Inspirational" onclick="toggleChip(this)">✨ Inspirational</div>
+                <div class="chip" data-tone="Urgent/FOMO" onclick="toggleChip(this)">⚡ Urgent/FOMO</div>
+                <div class="chip" data-tone="Storytelling" onclick="toggleChip(this)">📖 Storytelling</div>
+            </div>
+        </div>
+
+        <button class="generate-btn" id="genBtn" onclick="generate()">Generate Content 🚀</button>
+
+        <div id="loading" class="loading" style="display:none">
+            <div class="spinner"></div>
+            <p>Crafting your content...</p>
+        </div>
+
+        <div id="results" class="results-section"></div>
+    </div>
+
+    <script>
+        function toggleChip(el) {
+            el.classList.toggle('active');
+        }
+
+        function useExample(product, desc) {
+            document.getElementById('productInput').value = product;
+            document.getElementById('descInput').value = desc;
+        }
+
+        async function generate() {
+            const product = document.getElementById('productInput').value.trim();
+            const description = document.getElementById('descInput').value.trim();
+
+            if (!product) {
+                document.getElementById('productInput').style.borderColor = '#ff4444';
+                setTimeout(() => document.getElementById('productInput').style.borderColor = '', 2000);
+                return;
+            }
+
+            const platforms = [...document.querySelectorAll('#platformRow .chip.active')].map(c => c.dataset.platform);
+            const tones = [...document.querySelectorAll('#toneRow .chip.active')].map(c => c.dataset.tone);
+
+            if (platforms.length === 0 || tones.length === 0) return;
+
+            document.getElementById('genBtn').disabled = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+
+            try {
+                const resp = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product, description, platforms, tones })
+                });
+                const data = await resp.json();
+                renderResults(data);
+            } catch (e) {
+                document.getElementById('results').innerHTML = '<div class="card"><p style="color:#ff4444">Error generating content. Please try again.</p></div>';
+                document.getElementById('results').style.display = 'block';
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('genBtn').disabled = false;
+        }
+
+        function renderResults(data) {
+            const resultsDiv = document.getElementById('results');
+            let html = '';
+
+            for (const [platform, tones] of Object.entries(data)) {
+                const first = Object.values(tones)[0];
+                if (!first) continue;
+
+                html += `<div class="card platform-section">`;
+                html += `<div class="platform-header">${first.platform_icon} ${first.platform_name}</div>`;
+
+                for (const [tone, post] of Object.entries(tones)) {
+                    const isOver = post.chars > post.max_chars;
+                    const postId = `post-${platform}-${tone.replace(/[^a-z]/gi, '')}`;
+                    html += `
+                        <div class="post-card">
+                            <div class="post-tone">${tone}</div>
+                            <div class="post-text" id="${postId}">${escHtml(post.text)}</div>
+                            <div class="post-meta">
+                                <span class="char-count ${isOver ? 'over' : ''}">${post.chars} / ${post.max_chars} chars</span>
+                                <button class="copy-btn" onclick="copyPost('${postId}', this)">Copy</button>
+                            </div>
+                        </div>`;
+                }
+                html += `</div>`;
+            }
+
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function copyPost(id, btn) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+    </script>
+</body>
+</html>
