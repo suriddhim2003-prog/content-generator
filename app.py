@@ -232,6 +232,7 @@ def generate():
 
 
 if __name__ == "__main__":
-    print("\n  Social Media Content Generator")
-    print("  Open http://localhost:5051 in your browser\n")
-    app.run(host="127.0.0.1", port=5051, debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5051))
+    print(f"\n  Social Media Content Generator — port {port}\n")
+    app.run(host="0.0.0.0", port=port)
